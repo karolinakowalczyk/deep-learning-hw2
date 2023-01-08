@@ -1,0 +1,11 @@
+__pycache__/
+**/.idea/.gitignore
+**/.idea/homework1.iml
+**/.idea/inspectionProfiles/Project_Default.xml
+**/.idea/inspectionProfiles/profiles_settings.xml
+**/.idea/misc.xml
+**/.idea/modules.xml
+**/.idea/vcs.xml
+**/Kuzushiji-MNIST.npz
+hw2_cnn_skeleton_code/download_kuzushiji_mnist.npz
+.idea
