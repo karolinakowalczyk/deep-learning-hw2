@@ -25,6 +25,8 @@ from sklearn.datasets import load_digits
 
 import utils
 
+
+#how get this values??
 SKLEARN_DIGITS_TRAIN_SIZE = 1247
 SKLEARN_DIGITS_VAL_SIZE = 550
 class CNN(nn.Module):
@@ -55,7 +57,10 @@ class CNN(nn.Module):
         # initialize first (and only) set of FC => RELU layers
         #print(self.conv2.weight.shape)
         # torch.Size([10, 3, 5, 5])
-        self.fc1 = Linear(in_features=16 * 3 * 3, out_features=600)
+
+        #in_features - what size???
+        #even if I runned lab code - it's not working
+        self.fc1 = Linear(in_features=16*6*6, out_features=600)
         self.relu3 = ReLU()
 
         self.dropout_prob = nn.Dropout(p=0.3)
@@ -82,36 +87,60 @@ class CNN(nn.Module):
         forward pass -- this is enough for it to figure out how to do the
         backward pass.
         """
-        #print(x.shape)
         # pass the input through our first set of CONV => RELU =>
         # POOL layers
+        print("before")
+        print(x.shape)
+        print("HEEEJ")
         x = self.conv1(x)
+        print("after conv1")
+        print(x.shape)
         x = self.relu1(x)
         x = self.maxpool1(x)
+        print("after conv1 REST")
+        print(x.shape)
         # pass the output from the previous layer through the second
         # set of CONV => RELU => POOL layers
         x = self.conv2(x)
+        print("after conv2")
+        print(x.shape)
         x = self.relu2(x)
         x = self.maxpool2(x)
+        print("after conv2 REST")
+        print(x.shape)
         # flatten the output from the previous layer and pass it
         # through our only set of FC => RELU layers
-        x = flatten(x, 1)
+        x = x.view(-1, 16*6*6)
         x = self.fc1(x)
+        print("after fc1")
         x = self.relu3(x)
-
+        print("after fc1 REST")
+        print(x.shape)
         x = self.dropout_prob(x)
+        print("after fc1 dropout")
+        print(x.shape)
 
         x = self.fc2(x)
+        print("after fc2")
+        print(x.shape)
         x = self.relu4(x)
+
+        print("after fc2 REST")
+        print(x.shape)
         # pass the output to our softmax classifier to get our output
         # predictions
         x = self.fc3(x)
+        print("after fc3")
+        print(x.shape)
         output = self.logSoftmax(x)
-        # return the output predictions
+        print("output")
+        print(output.shape)
         return output
 
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
+    print("HAAAAA")
+    print(X.shape)
     """
     X (n_examples x n_features)
     y (n_examples): gold labels
@@ -130,13 +159,18 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     loss as a numerical value that is not part of the computation graph.
     """
     #X = X.view(X.size(0), -1)
-    #print(X.shape)
     optimizer.zero_grad()
-    output = model(X)
-    #output = model(X.view(-1, 10))
-    loss = criterion(output, y)
-    loss.backward()
-    optimizer.step()
+    with torch.set_grad_enabled(True):
+        output = model(X)
+        #output = model(X.view(-1, 10))
+        print("TRAIN output")
+
+        print(output.shape)
+        print(y.shape)
+        loss = criterion(output, y)
+        print("po")
+        loss.backward()
+        optimizer.step()
     return loss.item()
 
 
@@ -217,7 +251,7 @@ def main():
 
     utils.configure_seed(seed=42)
 
-    data = utils.load_classification_data()
+    #data = utils.load_classification_data()
 
     digits_transform = transforms.Compose([
         transforms.ToPILImage(),
@@ -236,8 +270,8 @@ def main():
 
     digits_train_dataset = utils.NumpyDataset(dev_X, dev_y, transform=digits_transform)
     digits_val_dataset = utils.NumpyDataset(test_X, test_y, transform=digits_transform)
-    digits_train_dataloader = torch.utils.data.DataLoader(digits_train_dataset, batch_size=64, shuffle=True)
-    digits_val_dataloader = torch.utils.data.DataLoader(digits_val_dataset, batch_size=64, shuffle=True)
+    digits_train_dataloader = torch.utils.data.DataLoader(digits_train_dataset, batch_size=opt.batch_size, shuffle=True)
+    digits_val_dataloader = torch.utils.data.DataLoader(digits_val_dataset, batch_size=opt.batch_size, shuffle=True)
 
     #dataloaders = dict(train=digits_train_dataloader, val=digits_val_dataloader)
     train_dataloader = dict(train=digits_train_dataloader, val=digits_val_dataloader)
@@ -282,6 +316,8 @@ def main():
         print('Training epoch {}'.format(ii))
         #for X_batch, y_batch in train_dataloader:
         for X_batch, y_batch in digits_train_dataloader:
+            print(X_batch.shape)
+            print(y_batch.shape)
             loss = train_batch(
                 X_batch, y_batch, model, optimizer, criterion)
             train_losses.append(loss)
