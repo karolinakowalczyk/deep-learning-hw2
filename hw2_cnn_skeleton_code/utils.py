@@ -44,7 +44,6 @@ def fetch_classification_data(dataset="Fashion-MNIST", random_state=42):
         Xtest=test_X, ytest=test_y
     )
 
-
 def read_raw_sign_mnist(path):
     with open(path) as f:
         f.readline()
@@ -114,18 +113,11 @@ class ClassificationDataset(torch.utils.data.Dataset):
         """
         data: the dict returned by utils.load_classification_data
         """
-
-        # self.data = torch.from_numpy(data).float()
-        # self.targets = torch.from_numpy(targets).long()
-        # self.transform = transform
-
         train_X, train_y = data["train"]
         dev_X, dev_y = data["dev"]
         test_X, test_y = data["test"]
 
         self.X = torch.tensor(train_X, dtype=torch.float32)
-        #print(self.X.shape)
-        # self.X = self.X.reshape((len(self.X), 8, 8))
         self.y = torch.tensor(train_y, dtype=torch.long)
 
         self.dev_X = torch.tensor(dev_X, dtype=torch.float32)
@@ -136,34 +128,6 @@ class ClassificationDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.X)
-        # return len(self.data)
 
     def __getitem__(self, idx):
-        # x = np.expand_dims(self.data[idx], axis=2)
-        # y = self.targets[idx]
-        # if self.transform:
-        #     x = self.transform(x)
-        # return x, y
         return self.X[idx], self.y[idx]
-
-
-SKLEARN_DIGITS_TRAIN_SIZE = 1247
-SKLEARN_DIGITS_VAL_SIZE = 550
-
-
-class NumpyDataset(torch.utils.data.Dataset):
-
-    def __init__(self, data, targets, transform=None):
-        self.data = torch.from_numpy(data).float()
-        self.targets = torch.from_numpy(targets).long()
-        self.transform = transform
-
-    def __getitem__(self, index):
-        x = np.expand_dims(self.data[index], axis=2)
-        y = self.targets[index]
-        if self.transform:
-            x = self.transform(x)
-        return x, y
-
-    def __len__(self):
-        return len(self.data)
