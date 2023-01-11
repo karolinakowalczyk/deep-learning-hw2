@@ -7,30 +7,16 @@ import argparse
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
-from torch import optim
-import torch.nn.functional as F
-import torchvision
 from matplotlib import pyplot as plt
 import numpy as np
 
-from torch.nn import Module
 from torch.nn import Conv2d
 from torch.nn import Linear
 from torch.nn import MaxPool2d
 from torch.nn import ReLU
 from torch.nn import LogSoftmax
-from torchvision.transforms import Compose
-from torchvision.transforms import ToTensor
-from torchvision.transforms import Normalize
-from torch import flatten
-from torchvision import transforms
-from sklearn.datasets import load_digits
 import utils
 
-
-#how get this values??
-SKLEARN_DIGITS_TRAIN_SIZE = 1247
-SKLEARN_DIGITS_VAL_SIZE = 550
 class CNN(nn.Module):
 
     def __init__(self, dropout_prob):
@@ -43,25 +29,14 @@ class CNN(nn.Module):
         """
         super(CNN, self).__init__()
 
-        # Implement me!
-
-        # initialize first set of CONV => RELU => POOL layers
         self.conv1 = Conv2d(in_channels=1, out_channels=8, kernel_size=(5, 5), stride=1, padding="same")
         self.relu1 = ReLU()
         self.maxpool1 = MaxPool2d(kernel_size=(2, 2), stride=2)
 
-        # initialize second set of CONV => RELU => POOL layers
-        # self.conv2 = Conv2d(in_channels=8, out_channels=16, kernel_size=(3, 3), stride=1, padding="valid")
         self.conv2 = Conv2d(in_channels=8, out_channels=16, kernel_size=(3, 3), stride=1, padding="valid")
         self.relu2 = ReLU()
         self.maxpool2 = MaxPool2d(kernel_size=(2, 2), stride=2)
 
-        # initialize first (and only) set of FC => RELU layers
-        #print(self.conv2.weight.shape)
-        # torch.Size([10, 3, 5, 5])
-
-        #in_features - what size???
-        #even if I runned lab code - it's not working
         self.fc1 = Linear(in_features=16*6*6, out_features=600)
         self.relu3 = ReLU()
 
@@ -89,62 +64,27 @@ class CNN(nn.Module):
         forward pass -- this is enough for it to figure out how to do the
         backward pass.
         """
-        # pass the input through our first set of CONV => RELU =>
-        # POOL layers
-        # print("before")
-        # print(x.shape)
         x = x.view(-1, 1, 28, 28)
-        # print("HEEEJ")
-        # print(x.shape)
         x = self.conv1(x)
-        # print("after conv1")
-        # print(x.shape)
         x = self.relu1(x)
         x = self.maxpool1(x)
-        # print("after conv1 REST")
-        # print(x.shape)
-        # pass the output from the previous layer through the second
-        # set of CONV => RELU => POOL layers
         x = self.conv2(x)
-        # print("after conv2")
-        # print(x.shape)
         x = self.relu2(x)
         x = self.maxpool2(x)
-        # print("after conv2 REST")
-        # print(x.shape)
-        # flatten the output from the previous layer and pass it
-        # through our only set of FC => RELU layers
         x = x.view(-1, 16*6*6)
         x = self.fc1(x)
-        # print("after fc1")
         x = self.relu3(x)
-        # print("after fc1 REST")
-        # print(x.shape)
         x = self.dropout_prob(x)
-        # print("after fc1 dropout")
-        # print(x.shape)
 
         x = self.fc2(x)
-        # print("after fc2")
-        # print(x.shape)
         x = self.relu4(x)
 
-        # print("after fc2 REST")
-        # print(x.shape)
-        # pass the output to our softmax classifier to get our output
-        # predictions
         x = self.fc3(x)
-        # print("after fc3")
-        # print(x.shape)
         output = self.logSoftmax(x)
-        #print("output")
-        #print(output.shape)
         return output
 
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
-    # print("HAAAAA")
-    # print(X.shape)
     """
     X (n_examples x n_features)
     y (n_examples): gold labels
@@ -162,17 +102,10 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     This function should return the loss (tip: call loss.item()) to get the
     loss as a numerical value that is not part of the computation graph.
     """
-    #X = X.view(X.size(0), -1)
     optimizer.zero_grad()
     with torch.set_grad_enabled(True):
         output = model(X)
-        #output = model(X.view(-1, 10))
-        # print("TRAIN output")
-        #
-        # print(output.shape)
-        # print(y.shape)
         loss = criterion(output, y)
-        # print("po")
         loss.backward()
         optimizer.step()
     return loss.item()
@@ -249,7 +182,7 @@ def main():
     parser.add_argument('-l2_decay', type=float, default=0)
     parser.add_argument('-dropout', type=float, default=0.8)
     parser.add_argument('-optimizer',
-                        choices=['sgd', 'adam'], default='sgd')
+                        choices=['sgd', 'adam'], default='adam')
 
     opt = parser.parse_args()
 
