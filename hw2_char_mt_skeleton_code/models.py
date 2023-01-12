@@ -14,20 +14,19 @@ def reshape_state(state):
 
 class Attention(nn.Module):
     def __init__(
-        self,
-        hidden_size,
+            self,
+            hidden_size,
     ):
-
         super(Attention, self).__init__()
         "Luong et al. general attention (https://arxiv.org/pdf/1508.04025.pdf)"
         self.linear_in = nn.Linear(hidden_size, hidden_size, bias=False)
         self.linear_out = nn.Linear(hidden_size * 2, hidden_size)
 
     def forward(
-        self,
-        query,
-        encoder_outputs,
-        src_lengths,
+            self,
+            query,
+            encoder_outputs,
+            src_lengths,
     ):
         # query: (batch_size, 1, hidden_dim)
         # encoder_outputs: (batch_size, max_src_len, hidden_dim)
@@ -71,11 +70,11 @@ class Attention(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(
-        self,
-        src_vocab_size,
-        hidden_size,
-        padding_idx,
-        dropout,
+            self,
+            src_vocab_size,
+            hidden_size,
+            padding_idx,
+            dropout,
     ):
         super(Encoder, self).__init__()
         self.hidden_size = hidden_size // 2
@@ -95,9 +94,9 @@ class Encoder(nn.Module):
         self.dropout = nn.Dropout(self.dropout)
 
     def forward(
-        self,
-        src,
-        lengths,
+            self,
+            src,
+            lengths,
     ):
         # src: (batch_size, max_src_len)
         # lengths: (batch_size)
@@ -109,7 +108,15 @@ class Encoder(nn.Module):
         # - Use torch.nn.utils.rnn.pad_packed_sequence to unpack the packed sequences
         #   (after passing them to the LSTM)
         #############################################
-        raise NotImplementedError
+
+        src = self.embedding(src)
+
+        src = self.dropout(src)
+        src = nn.utils.rnn.pack_padded_sequence(src, lengths, batch_first=True, enforce_sorted=False)
+        enc_output, final_hidden = self.lstm(src)
+        enc_output = nn.utils.rnn.pad_packed_sequence(enc_output)
+
+
         #############################################
         # END OF YOUR CODE
         #############################################
@@ -117,17 +124,17 @@ class Encoder(nn.Module):
         # final_hidden: tuple with 2 tensors
         # each tensor is (num_layers * num_directions, batch_size, hidden_size)
         # TODO: Uncomment the following line when you implement the forward pass
-        # return enc_output, final_hidden
+        return enc_output, final_hidden
 
 
 class Decoder(nn.Module):
     def __init__(
-        self,
-        hidden_size,
-        tgt_vocab_size,
-        attn,
-        padding_idx,
-        dropout,
+            self,
+            hidden_size,
+            tgt_vocab_size,
+            attn,
+            padding_idx,
+            dropout,
     ):
         super(Decoder, self).__init__()
         self.hidden_size = hidden_size
@@ -148,11 +155,11 @@ class Decoder(nn.Module):
         self.attn = attn
 
     def forward(
-        self,
-        tgt,
-        dec_state,
-        encoder_outputs,
-        src_lengths,
+            self,
+            tgt,
+            dec_state,
+            encoder_outputs,
+            src_lengths,
     ):
         # tgt: (batch_size, max_tgt_len)
         # dec_state: tuple with 2 tensors
@@ -162,9 +169,21 @@ class Decoder(nn.Module):
         # bidirectional encoder outputs are concatenated, so we may need to
         # reshape the decoder states to be of size (num_layers, batch_size, 2*hidden_size)
         # if they are of size (num_layers*num_directions, batch_size, hidden_size)
+        # if dec_state[0].shape[0] == 2:
+        #     dec_state = reshape_state(dec_state)
+
+        #in our case is tuple with 1 tensor
+        #print(dec_state)
+        print("1")
         if dec_state[0].shape[0] == 2:
             dec_state = reshape_state(dec_state)
-
+        print("2")
+        x = self.embedding(tgt)
+        print("3")
+        x = self.dropout(x)
+        print("4")
+        outputs, dec_state = self.lstm(x)
+        print("5")
         #############################################
         # TODO: Implement the forward pass of the decoder
         # Hints:
@@ -180,7 +199,7 @@ class Decoder(nn.Module):
         #         src_lengths,
         #     )
         #############################################
-        raise NotImplementedError
+        # raise NotImplementedError
         #############################################
         # END OF YOUR CODE
         #############################################
@@ -188,14 +207,14 @@ class Decoder(nn.Module):
         # dec_state: tuple with 2 tensors
         # each tensor is (num_layers, batch_size, hidden_size)
         # TODO: Uncomment the following line when you implement the forward pass
-        # return outputs, dec_state
+        return outputs, dec_state
 
 
 class Seq2Seq(nn.Module):
     def __init__(
-        self,
-        encoder,
-        decoder,
+            self,
+            encoder,
+            decoder,
     ):
         super(Seq2Seq, self).__init__()
 
@@ -207,13 +226,12 @@ class Seq2Seq(nn.Module):
         self.generator.weight = self.decoder.embedding.weight
 
     def forward(
-        self,
-        src,
-        src_lengths,
-        tgt,
-        dec_hidden=None,
+            self,
+            src,
+            src_lengths,
+            tgt,
+            dec_hidden=None,
     ):
-
         encoder_outputs, final_enc_state = self.encoder(src, src_lengths)
 
         if dec_hidden is None:
