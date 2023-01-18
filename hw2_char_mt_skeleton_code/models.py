@@ -109,7 +109,14 @@ class Encoder(nn.Module):
         # - Use torch.nn.utils.rnn.pad_packed_sequence to unpack the packed sequences
         #   (after passing them to the LSTM)
         #############################################
-        raise NotImplementedError
+        src = self.embedding(src)
+
+        src = self.dropout(src)
+        src = nn.utils.rnn.pack_padded_sequence(src, lengths, batch_first=True, enforce_sorted=False)
+        enc_output, final_hidden = self.lstm(src)
+        enc_output = nn.utils.rnn.pad_packed_sequence(enc_output, batch_first=True)
+
+        
         #############################################
         # END OF YOUR CODE
         #############################################
@@ -117,7 +124,7 @@ class Encoder(nn.Module):
         # final_hidden: tuple with 2 tensors
         # each tensor is (num_layers * num_directions, batch_size, hidden_size)
         # TODO: Uncomment the following line when you implement the forward pass
-        # return enc_output, final_hidden
+        return enc_output, final_hidden
 
 
 class Decoder(nn.Module):
@@ -180,7 +187,24 @@ class Decoder(nn.Module):
         #         src_lengths,
         #     )
         #############################################
-        raise NotImplementedError
+
+        #tgt = self.embedding(tgt)    
+        #outputs, dec_state = self.lstm(tgt)
+        
+        if tgt.shape[1] > 1:
+            out = self.dropout(self.embedding(tgt[:,:-1]))
+        else:
+            out = self.dropout(self.embedding(tgt))
+        outputs, dec_state = self.lstm(out, dec_state)
+        if self.attn is not None:
+            outputs=self.attn(
+                outputs,
+                encoder_outputs,
+                src_lengths,
+            )
+        outputs = self.dropout(outputs)
+
+        #raise NotImplementedError
         #############################################
         # END OF YOUR CODE
         #############################################
@@ -188,7 +212,7 @@ class Decoder(nn.Module):
         # dec_state: tuple with 2 tensors
         # each tensor is (num_layers, batch_size, hidden_size)
         # TODO: Uncomment the following line when you implement the forward pass
-        # return outputs, dec_state
+        return outputs, dec_state
 
 
 class Seq2Seq(nn.Module):
